@@ -10,9 +10,9 @@ def getData(dataFile):
 		classes = {}
 		for line in file.readlines():
 			if line != '\n':
-				dataTmp = [float(i) for i in line.split(',')[:4]]
+				dataTmp = [float(i) for i in line.split(',')[1:]]
 				data.append(dataTmp)
-				tmp = line.split(',')[-1]
+				tmp = line.split(',')[0]
 				if not tmp in classes:
 					classes[tmp] = [dataTmp]
 				else:
@@ -20,11 +20,11 @@ def getData(dataFile):
 		# data = np.asarray(data, dtype='float')
 	finally:
 		file.close()
-	nl = len(data)
-	return data, classes, nl
+	return data, classes
 
-def getW(data, classes, nl):
+def getW(data, classes):
 	# 求权值矩阵Wb和Ww
+	nl = len(data)
 	Wb = {}
 	Ww = {}
 	tmpClasses = [i for i in classes.keys()]
@@ -46,32 +46,16 @@ def getW(data, classes, nl):
 		Ww[cl] = np.asarray(tmpWw)
 	return Wb, Ww
 
-def getS(data, Wb, Ww, nl):
-	Sb = {}
-	Sw = {}
-	x = np.asarray(data)
-	for category in Wb.keys():
-		Sb[category] = np.asarray([])
-		Sw[category] = np.asarray([])
-		for i in range(nl):
-			for j in range(nl):
-				Sb[category] += Wb[category][i][j] * np.dot(x[i]-x[j], (x[i]-x[j]).T)
-				Sw[category] += Ww[category][i][j] * np.dot(x[i]-x[j], (x[i]-x[j]).T)
-		Sb[category] *= 0.5
-		Sw[category] *= 0.5
-	return Sb, Sw
-
 if __name__ == '__main__':
-	dataFile = 'iris.data'
-	data, classes, nl = getData(dataFile)
-	Wb, Ww = getW(data, classes, nl)
-	Sb, Sw = getS(data, Wb, Ww, nl)
+	dataFile = 'wine.data'
+	fileWb = open('wb', mode='w')
+	fileWw = open('ww', mode='w')
+	data, classes = getData(dataFile)
+	Wb, Ww = getW(data, classes)
 	np.set_printoptions(threshold=np.NaN)
-	fileWb = open('sb', mode='w')
-	fileWw = open('sw', mode='w')
 	try:
-		fileWb.write(str(Sb))
-		fileWw.write(str(Sw))
+		fileWb.write(str(Wb))
+		fileWw.write(str(Ww))
 	finally:
 		fileWb.close()
 		fileWw.close()
