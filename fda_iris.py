@@ -25,52 +25,50 @@ def getData(dataFile):
 
 
 def getW(data, classes, nl):
-	# 求权值矩阵Wb和Ww
-	Wb = {}
+	# 求权值矩阵Ww
 	Ww = {}
 	tmpClasses = [i for i in classes.keys()]
 	for cl in tmpClasses:
-		tmpWb = []
 		tmpWw = []
 		nk = len(classes[cl])
 		for i in range(nl):
-			tmpWb.append([])
 			tmpWw.append([])
 			for j in range(nl):
 				if (data[i] in classes[cl]) and (data[j] in classes[cl]):
-					tmpWb[-1].append(1 / nl - 1 / nk)
 					tmpWw[-1].append(1 / nk)
 				else:
-					tmpWb[-1].append(1 / nl)
 					tmpWw[-1].append(0)
-		Wb[cl] = np.asarray(tmpWb)
 		Ww[cl] = np.asarray(tmpWw)
-	return Wb, Ww
+	return Ww
 
 
-def getS(data, Wb, Ww, nl):
-	Sb = {}
-	Sw = {}
+def getS(data, classes, Ww, nl):
 	x = np.asarray(data)
 	length = x[0].shape[0]
-	for category in Wb.keys():
-		Sb[category] = np.zeros([4, 4], dtype='float')
-		Sw[category] = np.zeros([4, 4], dtype='float')
+	Sb = np.zeros([length, length], dtype='float')
+	Sw = {'sum': np.zeros([length, length], dtype='float')}
+	aveClass = {}
+	aveAll = np.mean(data, axis=0)
+	for category in Ww.keys():
+		aveClass[category] = np.mean(classes[category], axis=0)
+		Sw[category] = np.zeros([length, length], dtype='float')
 		for i in range(nl):
 			for j in range(nl):
 				tmp = (x[i] - x[j]).reshape(length, 1)
-				Sb[category] += Wb[category][i][j] * tmp * tmp.T
 				Sw[category] += Ww[category][i][j] * np.dot(tmp, tmp.T)
-		Sb[category] *= 0.5
 		Sw[category] *= 0.5
-	return Sb, Sw
+		Sb += np.asarray(classes[category], dtype='float').shape[0] * \
+				np.dot((aveClass[category] - aveAll).reshape(length, 1),
+						(aveClass[category] - aveAll).reshape(1, length))
+		Sw['sum'] += Sw[category]
+	return Sb, Sw['sum']
 
 
 if __name__ == '__main__':
 	dataFile = 'iris.data'
 	data, classes, nl = getData(dataFile)
-	Wb, Ww = getW(data, classes, nl)
-	Sb, Sw = getS(data, Wb, Ww, nl)
+	Ww = getW(data, classes, nl)
+	Sb, Sw = getS(data, classes, Ww, nl)
 	np.set_printoptions(threshold=np.NaN)
 	fileWb = open('sb', mode='w')
 	fileWw = open('sw', mode='w')
