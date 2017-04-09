@@ -64,6 +64,19 @@ def getS(data, classes, Ww, nl):
 	return Sb, Sw['sum']
 
 
+def dimReduction(Sb, Sw, data):
+	eigVals, eigVecs = np.linalg.eig(np.linalg.inv(Sb).dot(Sw))
+	# for i in range(len(eigVals)):
+	# 	eigvec_sc = eigVecs[:, i].reshape(4, 1)
+	eig_pairs = [(np.abs(eigVals[i]), eigVecs[:, i]) for i in range(len(eigVals))]
+	eig_pairs = sorted(eig_pairs, key=lambda k: k[0], reverse=True)
+	Wa = np.hstack((eig_pairs[0][1].reshape(4, 1), eig_pairs[1][1].reshape(4, 1)))
+	try:
+		dataLda = data.dot(Wa)
+	except AttributeError:
+		dataLda = np.asarray(data, dtype='float').dot(Wa)
+	return Wa, dataLda
+
 if __name__ == '__main__':
 	dataFile = 'iris.data'
 	data, classes, nl = getData(dataFile)
@@ -72,6 +85,9 @@ if __name__ == '__main__':
 	np.set_printoptions(threshold=np.NaN)
 	fileWb = open('sb', mode='w')
 	fileWw = open('sw', mode='w')
+	Wa, dataLda = dimReduction(Sb, Sw, data)
+	print(Wa)
+	print(dataLda)
 	try:
 		fileWb.write(str(Sb))
 		fileWw.write(str(Sw))
