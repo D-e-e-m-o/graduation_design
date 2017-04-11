@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import numpy as np
+import itertools
+import matplotlib.pyplot as plt
 
 
 def getData(dataFile):
@@ -65,7 +67,7 @@ def getS(data, classes, Ww, nl):
 
 
 def dimReduction(Sb, Sw, data):
-	eigVals, eigVecs = np.linalg.eig(np.linalg.inv(Sb).dot(Sw))
+	eigVals, eigVecs = np.linalg.eig(np.linalg.inv(Sw).dot(Sb))
 	eig_pairs = [(np.abs(eigVals[i]), eigVecs[:, i]) for i in range(len(eigVals))]
 	eig_pairs = sorted(eig_pairs, key=lambda k: k[0], reverse=True)
 	Wa = np.hstack((eig_pairs[0][1].reshape(4, 1), eig_pairs[1][1].reshape(4, 1)))
@@ -97,19 +99,27 @@ def judge(vector, classes, Wa, Sw):
 
 if __name__ == '__main__':
 	dataFile = 'iris.data'
+	testFile = 'iris.data.bak'
 	data, classes, nl = getData(dataFile)
 	Ww = getW(data, classes, nl)
 	Sb, Sw = getS(data, classes, Ww, nl)
 	np.set_printoptions(threshold=np.NaN)
 	fileWb = open('sb', mode='w')
 	fileWw = open('sw', mode='w')
-	vector = np.asarray([4.8, 3.0, 1.4, 0.1], dtype='float')
 	Wa, dataLda = dimReduction(Sb, Sw['sum'], data)
-	print(judge(vector, classes, Wa, Sw))
-	
+	test, a, b = getData(testFile)
+	for i in itertools.chain(range(10), range(50, 65), range(100, 120)):
+		vector = np.asarray(test[i], dtype='float')
+		print(i+1, ':', judge(vector, classes, Wa, Sw)[:-1])
+	"""
+	plt.plot(dataLda[0:50][:, 0], dataLda[0:50][:, 1], 'r--',
+				dataLda[50:100][:, 0], dataLda[50:100][:, 1], 'bs',
+				dataLda[100:150][:, 0], dataLda[100:150][:, 1], 'g^')
+	plt.show()
+	"""
 	try:
 		fileWb.write(str(Sb))
-		fileWw.write(str(Sw))
+		fileWw.write(str(Sw['sum']))
 	finally:
 		fileWb.close()
 		fileWw.close()
