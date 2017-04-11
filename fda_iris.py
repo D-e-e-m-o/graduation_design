@@ -104,8 +104,8 @@ if __name__ == '__main__':
 	Ww = getW(data, classes, nl)
 	Sb, Sw = getS(data, classes, Ww, nl)
 	np.set_printoptions(threshold=np.NaN)
-	fileWb = open('sb', mode='w')
-	fileWw = open('sw', mode='w')
+	fileSb = open('sb', mode='w')
+	fileSw = open('sw', mode='w')
 	Wa, dataLda = dimReduction(Sb, Sw['sum'], data)
 	test, a, b = getData(testFile)
 	for i in itertools.chain(range(10), range(50, 65), range(100, 120)):
@@ -118,8 +118,8 @@ if __name__ == '__main__':
 	plt.show()
 	"""
 	try:
-		fileWb.write(str(Sb))
-		fileWw.write(str(Sw['sum']))
+		fileSb.write(str(Sb))
+		fileSw.write(str(Sw['sum']))
 	finally:
-		fileWb.close()
-		fileWw.close()
+		fileSb.close()
+		fileSw.close()

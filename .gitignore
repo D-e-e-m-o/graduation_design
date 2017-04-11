@@ -1,4 +1,5 @@
 .idea/*
+*.swp
 *.data
 *.names
 *.pdf
