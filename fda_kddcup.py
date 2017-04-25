@@ -17,23 +17,35 @@ def getData(dataFile):
 	line3 = ['SF', 'S1', 'REJ', 'S2', 'S0', 'S3', 'RSTO', 'RSTR', 'RSTOS0', 'OTH', 'SH']
 	try:
 		data = []
-		classes = {'normal': [], 'bad': []}
-		for i in range(300):
-			line = file.readline()
+		classes = {'bad': []}
+		num = {}
+		sum = 0
+		for line in file.readlines():
 			if line != '\n':
 				tmp = line.split(',')
 				dataTmp = [line1.index(tmp[1])+1, line2.index(tmp[2])+1, line3.index(tmp[3])+1,\
 							float(tmp[4]), float(tmp[5])]
-				data.append(dataTmp)
-				if tmp[-1][:-2] == 'normal':
-					classes['normal'].append(dataTmp)
-				else:
-					classes['bad'].append(dataTmp)
+				if tmp[-1][:-2] not in classes:
+					classes[tmp[-1][:-2]] = [dataTmp]
+					data.append(dataTmp)
+					num[tmp[-1][:-2]] = 1
+					sum += 1
+					if tmp[-1][:-2] != 'normal':
+						classes['bad'].append(dataTmp)
+				elif num[tmp[-1][:-2]] <= 100:
+					classes[tmp[-1][:-2]].append(dataTmp)
+					data.append(dataTmp)
+					num[tmp[-1][:-2]] += 1
+					sum += 1
+					if tmp[-1][:-2] != 'normal':
+						classes['bad'].append(dataTmp)
+			if sum >= 2300:
+				break
 				# data = np.asarray(data, dtype='float')
 	finally:
 		file.close()
 	nl = len(data)
-	return data, classes, nl
+	return data, {'normal': classes['normal'], 'bad': classes['bad']}, nl
 
 
 if __name__ == '__main__':
@@ -42,16 +54,16 @@ if __name__ == '__main__':
 	Ww = fda.getW(data, classes, nl)
 	Sb, Sw = fda.getS(data, classes, Ww, nl)
 	np.set_printoptions(threshold=np.NaN)
-	fileWb = open('sb', mode='w')
-	fileWw = open('sw', mode='w')
+	fileSb = open('sb', mode='w')
+	fileSw = open('sw', mode='w')
 	fileWa = open('wa', mode='w')
 	try:
-		fileWb.write(str(Sb))
-		fileWw.write(str(Sw['sum']))
+		fileSb.write(str(Sb))
+		fileSw.write(str(Sw))
 		Wa, dataLda = fda.dimReduction(Sb, Sw['sum'], data)
-		print(Wa)
+		print(dataLda)
 		fileWa.write(str(Wa))
 	finally:
-		fileWb.close()
-		fileWw.close()
+		fileSb.close()
+		fileSw.close()
 		fileWa.close()
