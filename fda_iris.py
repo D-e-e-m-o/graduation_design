@@ -99,7 +99,7 @@ def judge(vector, classes, Wa, Sw):
 
 
 if __name__ == '__main__':
-	dataFile = 'iris.data'
+	dataFile = 'iris.data.bak'
 	testFile = 'iris.data.bak'
 	data, classes, nl = getData(dataFile)
 	Ww = getW(data, classes, nl)
@@ -109,6 +109,7 @@ if __name__ == '__main__':
 	fileWw = open('sw', mode='w')
 	Wa, dataLda = dimReduction(Sb, Sw['sum'], data)
 	test, a, b = getData(testFile)
+	print(dataLda)
 	"""
 	for i in itertools.chain(range(10), range(50, 65), range(100, 120)):
 		vector = np.asarray(test[i], dtype='float')
