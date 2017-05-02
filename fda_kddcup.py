@@ -8,6 +8,7 @@ tcp等等要编号映射
 """
 import fda_iris as fda
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def getData(dataFile):
@@ -54,16 +55,32 @@ if __name__ == '__main__':
 	Ww = fda.getW(data, classes, nl)
 	Sb, Sw = fda.getS(data, classes, Ww, nl)
 	np.set_printoptions(threshold=np.NaN)
-	fileSb = open('sb', mode='w')
-	fileSw = open('sw', mode='w')
-	fileWa = open('wa', mode='w')
+	fileSb = open('kddcup/sb', mode='w')
+	fileSw = open('kddcup/sw', mode='w')
+	fileWa = open('kddcup/wa', mode='w')
+	fileData = open('kddcup/data', mode='w')
+	fileClasses = open('kddcup/classes', mode='w')
+	fileDataLda = open('kddcup/dataLda', mode='w')
 	try:
 		fileSb.write(str(Sb))
 		fileSw.write(str(Sw))
 		Wa, dataLda = fda.dimReduction(Sb, Sw['sum'], data)
-		print(dataLda)
+		# print(dataLda)
 		fileWa.write(str(Wa))
+		fileDataLda.write(str(dataLda))
+		fileData.write(str(data))
+		fileClasses.write(str(classes))
+		for i, j in zip(data, dataLda):
+			if i in classes['normal']:
+				# plt.plot(j[0], j[1], 'ro')
+				pass
+			else:
+				plt.plot(j[0], j[1], 'g^')
+		plt.savefig('kddcup/test2.png')
 	finally:
 		fileSb.close()
 		fileSw.close()
 		fileWa.close()
+		fileDataLda.close()
+		fileData.close()
+		fileClasses.close()
