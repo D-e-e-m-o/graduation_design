@@ -63,7 +63,7 @@ def getData(dataFile):
 						num[tmp[-1][:-2]] = 1
 						classes['bad'].append(dataTmp)
 					else:
-						num[tmp[-1][:-2]] = -2100
+						num[tmp[-1][:-2]] = 1
 				elif num[tmp[-1][:-2]] <= 100:
 					classes[tmp[-1][:-2]].append(dataTmp)
 					data.append(dataTmp)
@@ -71,7 +71,7 @@ def getData(dataFile):
 					sum += 1
 					if tmp[-1][:-2] != 'normal':
 						classes['bad'].append(dataTmp)
-			if sum >= 4400:
+			if sum >= 2300:
 				break
 				# data = np.asarray(data, dtype='float')
 	finally:
@@ -125,8 +125,8 @@ if __name__ == '__main__':
 			if i in classes['normal']:
 				plt.plot(j[0], j[1], 'ro')
 			else:
-				plt.plot(j[0], j[1], 'g--')
-		plt.savefig('kddcup/test4400.png')
+				plt.plot(j[0], j[1], 'g^')
+		plt.savefig('kddcup/test2300.png')
 		yes = 0
 		no = 0
 		testData, testClasses, nl = getData(testFile)
