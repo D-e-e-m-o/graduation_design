@@ -67,10 +67,11 @@ def getS(data, classes, Ww, nl):
 
 
 def dimReduction(Sb, Sw, data):
+	length = len(data[0])
 	eigVals, eigVecs = np.linalg.eig(np.linalg.inv(Sw).dot(Sb))
 	eig_pairs = [(np.abs(eigVals[i]), eigVecs[:, i]) for i in range(len(eigVals))]
 	eig_pairs = sorted(eig_pairs, key=lambda k: k[0], reverse=True)
-	Wa = np.hstack((eig_pairs[0][1].reshape(4, 1), eig_pairs[1][1].reshape(4, 1)))
+	Wa = np.hstack((eig_pairs[0][1].reshape(length, 1), eig_pairs[1][1].reshape(length, 1)))
 	try:
 		dataLda = data.dot(Wa)
 	except AttributeError:
@@ -79,7 +80,7 @@ def dimReduction(Sb, Sw, data):
 
 
 def judge(vector, classes, Wa, Sw):
-	numClasses = len(classes)
+	# numClasses = len(classes)
 	aveClass = {}
 	maxgj = -99999999
 	solve = "not found"
@@ -98,7 +99,7 @@ def judge(vector, classes, Wa, Sw):
 
 
 if __name__ == '__main__':
-	dataFile = 'iris.data'
+	dataFile = 'iris.data.bak'
 	testFile = 'iris.data.bak'
 	data, classes, nl = getData(dataFile)
 	Ww = getW(data, classes, nl)
@@ -108,6 +109,8 @@ if __name__ == '__main__':
 	fileSw = open('sw', mode='w')
 	Wa, dataLda = dimReduction(Sb, Sw['sum'], data)
 	test, a, b = getData(testFile)
+	print(dataLda)
+	"""
 	for i in itertools.chain(range(10), range(50, 65), range(100, 120)):
 		vector = np.asarray(test[i], dtype='float')
 		print(i+1, ':', judge(vector, classes, Wa, Sw)[:-1])
@@ -116,7 +119,6 @@ if __name__ == '__main__':
 				dataLda[50:100][:, 0], dataLda[50:100][:, 1], 'bs',
 				dataLda[100:150][:, 0], dataLda[100:150][:, 1], 'g^')
 	plt.show()
-	"""
 	try:
 		fileSb.write(str(Sb))
 		fileSw.write(str(Sw['sum']))
