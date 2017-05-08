@@ -1,18 +1,5 @@
-.idea
-__pycache__
-*.swp
-*.data
-*.names
-*.pdf
-*.docx
-*.xlsx
-*.bak
-wb
-ww
-sb
-sw
-kddcup*
-corrected
-kddcup
+*
+
+!*.py
 test.py
 

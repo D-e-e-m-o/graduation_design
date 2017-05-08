@@ -29,18 +29,24 @@ def getData(dataFile):
 def getW(data, classes, nl):
 	# 求权值矩阵Ww
 	Ww = {}
+	Wb = {}
 	tmpClasses = [i for i in classes.keys()]
 	for cl in tmpClasses:
 		tmpWw = []
+		tmpWb = []
 		nk = len(classes[cl])
 		for i in range(nl):
 			tmpWw.append([])
+			tmpWb.append([])
 			for j in range(nl):
 				if (data[i] in classes[cl]) and (data[j] in classes[cl]):
 					tmpWw[-1].append(1 / nk)
+					tmpWb[-1].append(1 / nl - 1 / nk)
 				else:
 					tmpWw[-1].append(0)
+					tmpWb[-1].append(1 / nl)
 		Ww[cl] = np.asarray(tmpWw)
+		Wb[cl] = np.asarray(tmpWb)
 	return Ww
 
 
