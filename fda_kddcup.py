@@ -12,6 +12,42 @@ import matplotlib.pyplot as plt
 import scipy.io as scio
 
 
+def getW(data, classes, y1, nl):
+	# 求权值矩阵Ww
+	Ww = {}
+	Wb = {}
+	for cl in classes:
+		tmpWw = []
+		tmpWb = []
+		nk = len(classes[cl])
+		for i in range(nl):
+			tmpWw.append([])
+			tmpWb.append([])
+			for j in range(nl):
+				if (y1[i] == cl) and (y1[j] == cl):
+					cigmai = 9999999
+					cigmaj = cigmai
+					for m in range(nl):
+						if i != m:
+							dist = np.linalg.norm(data[i] - data[m])
+							if 0 < dist < cigmai:
+								cigmai = dist
+						if j != m:
+							dist = np.linalg.norm(data[j] - data[m])
+							if 0 < dist < cigmaj:
+								cigmaj = dist
+					Aij = np.exp(-(np.linalg.norm(data[i] - data[j]))**2 / cigmai / cigmaj)
+					# Aij = 1
+					tmpWw[-1].append(Aij / nk)
+					tmpWb[-1].append(Aij * (1 / nl - 1 / nk))
+				else:
+					tmpWw[-1].append(0)
+					tmpWb[-1].append(1 / nl)
+		Ww[cl] = np.asarray(tmpWw)
+		Wb[cl] = np.asarray(tmpWb)
+	return Ww, Wb
+
+
 def getTestData(dataFile):
 	file = open(dataFile, 'r')
 	line1 = ['tcp', 'udp', 'icmp']
@@ -85,6 +121,9 @@ def getMatData(dataFile):
 	file = scio.loadmat(dataFile)
 	nl = len(file['x1'])
 	data = np.delete(file['x1'], [6, 7, 14, 19, 20], 1)
+	# ave = np.mean(data, axis=0)
+	# std = np.std(data, axis=0)
+	# data = (data - ave) / std
 	classes = {0: np.zeros(36), 1: np.zeros(36), 2: np.zeros(36), 3: np.zeros(36)}
 	for i, j in zip(file['y1'], data):
 		classes[i[0]] = np.row_stack((classes[i[0]], j))
@@ -100,6 +139,9 @@ def getMatTestData(dataFile):
 	file = scio.loadmat(dataFile)
 	y2 = file['y2']
 	data = np.delete(file['x2'], [6, 7, 14, 19, 20], 1)
+	# ave = np.mean(data, axis=0)
+	# std = np.std(data, axis=0)
+	# data = (data - ave) / std
 	classes = {0: np.zeros(36), 1: np.zeros(36), 2: np.zeros(36), 3: np.zeros(36)}
 	for i, j in zip(file['y2'], data):
 		classes[i[0]] = np.row_stack((classes[i[0]], j))
@@ -131,11 +173,11 @@ def judge(vector, classes, Wa, Sw):
 
 if __name__ == '__main__':
 	# dataFile = 'kddcup.data_10_percent'
+	np.set_printoptions(threshold=np.NaN)
 	dataFile = 'KDD99data.mat'
 	data, classes, nl, y1 = getMatData(dataFile)
-	Ww = fda.getW(data, classes, nl)
-	Sb, Sw = fda.getS(data, classes, Ww, nl)
-	np.set_printoptions(threshold=np.NaN)
+	Ww, Wb = getW(data, classes, y1, nl)
+	Sb, Sw = fda.getS(data, Ww, Wb, nl)
 	fileSb = open('kddcup/sb', mode='w')
 	fileSw = open('kddcup/sw', mode='w')
 	fileWa = open('kddcup/wa', mode='w')
@@ -146,7 +188,7 @@ if __name__ == '__main__':
 	try:
 		fileSb.write(str(Sb))
 		fileSw.write(str(Sw))
-		Wa, dataLda = fda.dimReduction(Sb, Sw['sum'], data)
+		Wa, dataLda = fda.dimReduction(Sb['sum'], Sw['sum'], data)
 		# print(dataLda)
 		fileWa.write(str(Wa))
 		fileDataLda.write(str(dataLda))
@@ -170,11 +212,11 @@ if __name__ == '__main__':
 		for i, j in zip(testData, y2):
 			# tmp = np.asarray(i, dtype='float')
 			solve = judge(i, testClasses, Wa, Sw)
-			if solve == j:
+			if solve == j[0]:
 					yes += 1
 			else:
 				no += 1
-		print(yes, ' ', no)
+		print(yes, no)
 		print(yes/(yes+no))
 		
 	finally:
