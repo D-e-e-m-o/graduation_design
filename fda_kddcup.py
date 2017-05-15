@@ -92,7 +92,8 @@ def getMatData(dataFile):
 	classes[1] = np.delete(classes[1], 0, 0)
 	classes[2] = np.delete(classes[2], 0, 0)
 	classes[3] = np.delete(classes[3], 0, 0)
-	return data, classes, nl
+	y1 = file['y1']
+	return data, classes, nl, y1
 
 
 def getMatTestData(dataFile):
@@ -131,7 +132,7 @@ def judge(vector, classes, Wa, Sw):
 if __name__ == '__main__':
 	# dataFile = 'kddcup.data_10_percent'
 	dataFile = 'KDD99data.mat'
-	data, classes, nl = getMatData(dataFile)
+	data, classes, nl, y1 = getMatData(dataFile)
 	Ww = fda.getW(data, classes, nl)
 	Sb, Sw = fda.getS(data, classes, Ww, nl)
 	np.set_printoptions(threshold=np.NaN)
@@ -153,18 +154,18 @@ if __name__ == '__main__':
 		fileClasses.write(str(classes))
 		yes = 0
 		no = 0
-		"""
-		for i, j in zip(data, dataLda):
-			if i in classes[0]:
-				yes += 1
-				# plt.plot(j[0], j[1], 'ro')
-				pass
+		
+		for i, j in zip(y1, dataLda):
+			if i == 0:
+				plt.plot(j[0], j[1], 'ro')
+			elif i == 1:
+				plt.plot(j[0], j[1], 'g^')
+			elif i == 2:
+				plt.plot(j[0], j[1], 'b^')
 			else:
-				no += 1
-				# plt.plot(j[0], j[1], 'g^')
-		# plt.savefig('kddcup/test400no.png')
-		print(yes, no)
-		"""
+				plt.plot(j[0], j[1], 'c^')
+		plt.savefig('kddcup/test400.png')
+		
 		testData, testClasses, y2 = getMatTestData(dataFile)
 		for i, j in zip(testData, y2):
 			# tmp = np.asarray(i, dtype='float')
