@@ -9,6 +9,7 @@ tcp等等要编号映射
 import fda_iris as fda
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy.io as scio
 
 
 def getTestData(dataFile):
@@ -80,14 +81,42 @@ def getData(dataFile):
 	return data, {'normal': classes['normal'], 'bad': classes['bad']}, nl
 
 
+def getMatData(dataFile):
+	file = scio.loadmat(dataFile)
+	nl = len(file['x1'])
+	data = np.delete(file['x1'], [6, 7, 14, 19, 20], 1)
+	classes = {0: np.zeros(36), 1: np.zeros(36), 2: np.zeros(36), 3: np.zeros(36)}
+	for i, j in zip(file['y1'], data):
+		classes[i[0]] = np.row_stack((classes[i[0]], j))
+	classes[0] = np.delete(classes[0], 0, 0)
+	classes[1] = np.delete(classes[1], 0, 0)
+	classes[2] = np.delete(classes[2], 0, 0)
+	classes[3] = np.delete(classes[3], 0, 0)
+	return data, classes, nl
+
+
+def getMatTestData(dataFile):
+	file = scio.loadmat(dataFile)
+	y2 = file['y2']
+	data = np.delete(file['x2'], [6, 7, 14, 19, 20], 1)
+	classes = {0: np.zeros(36), 1: np.zeros(36), 2: np.zeros(36), 3: np.zeros(36)}
+	for i, j in zip(file['y2'], data):
+		classes[i[0]] = np.row_stack((classes[i[0]], j))
+	classes[0] = np.delete(classes[0], 0, 0)
+	classes[1] = np.delete(classes[1], 0, 0)
+	classes[2] = np.delete(classes[2], 0, 0)
+	classes[3] = np.delete(classes[3], 0, 0)
+	return data, classes, y2
+
+
 def judge(vector, classes, Wa, Sw):
 	# numClasses = len(classes)
 	aveClass = {}
 	maxgj = -99999999
 	solve = "not found"
-	vector.reshape([1, 5])
+	vector.reshape([1, len(vector)])
 	for category in classes.keys():
-		aveClass[category] = np.mean(classes[category], axis=0).reshape([1, 5])
+		aveClass[category] = np.mean(classes[category], axis=0).reshape([1, len(vector)])
 		nj = len(classes[category])
 		gj = -0.5*(vector - aveClass[category]).dot(Wa)\
 			.dot(np.linalg.inv(1 / (nj - 1)*Wa.T.dot(Sw[category]).dot(Wa)))\
@@ -100,8 +129,9 @@ def judge(vector, classes, Wa, Sw):
 
 
 if __name__ == '__main__':
-	dataFile = 'kddcup.data_10_percent'
-	data, classes, nl = getData(dataFile)
+	# dataFile = 'kddcup.data_10_percent'
+	dataFile = 'KDD99data.mat'
+	data, classes, nl = getMatData(dataFile)
 	Ww = fda.getW(data, classes, nl)
 	Sb, Sw = fda.getS(data, classes, Ww, nl)
 	np.set_printoptions(threshold=np.NaN)
@@ -111,7 +141,7 @@ if __name__ == '__main__':
 	fileData = open('kddcup/data', mode='w')
 	fileClasses = open('kddcup/classes', mode='w')
 	fileDataLda = open('kddcup/dataLda', mode='w')
-	testFile = 'corrected'
+	# testFile = 'corrected'
 	try:
 		fileSb.write(str(Sb))
 		fileSw.write(str(Sw))
@@ -121,25 +151,31 @@ if __name__ == '__main__':
 		fileDataLda.write(str(dataLda))
 		fileData.write(str(data))
 		fileClasses.write(str(classes))
-		for i, j in zip(data, dataLda):
-			if i in classes['normal']:
-				plt.plot(j[0], j[1], 'ro')
-			else:
-				plt.plot(j[0], j[1], 'g^')
-		plt.savefig('kddcup/test2300.png')
 		yes = 0
 		no = 0
-		testData, testClasses, nl = getData(testFile)
-		for i in testData:
-			tmp = np.asarray(i, dtype='float')
-			solve = judge(tmp, testClasses, Wa, Sw)
-			if(i in testClasses['normal'] and solve == 'normal')or\
-					(i in testClasses['bad'] and solve == 'bad'):
+		"""
+		for i, j in zip(data, dataLda):
+			if i in classes[0]:
+				yes += 1
+				# plt.plot(j[0], j[1], 'ro')
+				pass
+			else:
+				no += 1
+				# plt.plot(j[0], j[1], 'g^')
+		# plt.savefig('kddcup/test400no.png')
+		print(yes, no)
+		"""
+		testData, testClasses, y2 = getMatTestData(dataFile)
+		for i, j in zip(testData, y2):
+			# tmp = np.asarray(i, dtype='float')
+			solve = judge(i, testClasses, Wa, Sw)
+			if solve == j:
 					yes += 1
 			else:
 				no += 1
 		print(yes, ' ', no)
 		print(yes/(yes+no))
+		
 	finally:
 		fileSb.close()
 		fileSw.close()
