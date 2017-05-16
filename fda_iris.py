@@ -5,6 +5,26 @@ import itertools
 import matplotlib.pyplot as plt
 
 
+def pca(x, rate):
+	ave = np.mean(x, axis=0)
+	std = np.std(x, axis=0)
+	x1 = (x - ave)/std
+	# cov = np.cov(x1.T)
+	cov = x1.T.dot(x1) / 399
+	eig_val, eig_vec = np.linalg.eig(cov)
+	# eig_pairs = np.row_stack((np.abs(eig_val), eig_vec))
+	eigValInd = np.argsort(-eig_val)
+	for i in range(len(eig_val)):
+		topK = eigValInd[:i]
+		eigVal = eig_val[topK]
+		a = eigVal.sum()
+		b = eig_val.sum()
+		if a / b >= rate:
+			break
+	selectVal = eig_vec.T[:, topK]
+	return x.dot(selectVal), ave, std, selectVal, len(topK)
+
+
 def getData(dataFile):
 	file = open(dataFile, 'r')
 	try:

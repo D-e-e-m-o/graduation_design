@@ -25,6 +25,7 @@ def getW(data, classes, y1, nl):
 			tmpWb.append([])
 			for j in range(nl):
 				if (y1[i] == cl) and (y1[j] == cl):
+					"""
 					cigmai = 9999999
 					cigmaj = cigmai
 					for m in range(nl):
@@ -37,7 +38,8 @@ def getW(data, classes, y1, nl):
 							if 0 < dist < cigmaj:
 								cigmaj = dist
 					Aij = np.exp(-(np.linalg.norm(data[i] - data[j]))**2 / cigmai / cigmaj)
-					# Aij = 1
+					"""
+					Aij = 1
 					tmpWw[-1].append(Aij / nk)
 					tmpWb[-1].append(Aij * (1 / nl - 1 / nk))
 				else:
@@ -121,10 +123,11 @@ def getMatData(dataFile):
 	file = scio.loadmat(dataFile)
 	nl = len(file['x1'])
 	data = np.delete(file['x1'], [6, 7, 14, 19, 20], 1)
+	data, ave, std, p, dim = fda.pca(data, 0.95)
 	# ave = np.mean(data, axis=0)
 	# std = np.std(data, axis=0)
 	# data = (data - ave) / std
-	classes = {0: np.zeros(36), 1: np.zeros(36), 2: np.zeros(36), 3: np.zeros(36)}
+	classes = {0: np.zeros(dim), 1: np.zeros(dim), 2: np.zeros(dim), 3: np.zeros(dim)}
 	for i, j in zip(file['y1'], data):
 		classes[i[0]] = np.row_stack((classes[i[0]], j))
 	classes[0] = np.delete(classes[0], 0, 0)
@@ -132,17 +135,18 @@ def getMatData(dataFile):
 	classes[2] = np.delete(classes[2], 0, 0)
 	classes[3] = np.delete(classes[3], 0, 0)
 	y1 = file['y1']
-	return data, classes, nl, y1
+	return data, classes, nl, y1, ave, std, p, dim
 
 
-def getMatTestData(dataFile):
+def getMatTestData(dataFile, ave, std, p, dim=36):
 	file = scio.loadmat(dataFile)
 	y2 = file['y2']
 	data = np.delete(file['x2'], [6, 7, 14, 19, 20], 1)
 	# ave = np.mean(data, axis=0)
 	# std = np.std(data, axis=0)
 	# data = (data - ave) / std
-	classes = {0: np.zeros(36), 1: np.zeros(36), 2: np.zeros(36), 3: np.zeros(36)}
+	data = ((data - ave) / std).dot(p)
+	classes = {0: np.zeros(dim), 1: np.zeros(dim), 2: np.zeros(dim), 3: np.zeros(dim)}
 	for i, j in zip(file['y2'], data):
 		classes[i[0]] = np.row_stack((classes[i[0]], j))
 	classes[0] = np.delete(classes[0], 0, 0)
@@ -175,7 +179,7 @@ if __name__ == '__main__':
 	# dataFile = 'kddcup.data_10_percent'
 	np.set_printoptions(threshold=np.NaN)
 	dataFile = 'KDD99data.mat'
-	data, classes, nl, y1 = getMatData(dataFile)
+	data, classes, nl, y1, ave, std, p, dim = getMatData(dataFile)
 	Ww, Wb = getW(data, classes, y1, nl)
 	Sb, Sw = fda.getS(data, Ww, Wb, nl)
 	fileSb = open('kddcup/sb', mode='w')
@@ -208,7 +212,7 @@ if __name__ == '__main__':
 				plt.plot(j[0], j[1], 'c^')
 		plt.savefig('kddcup/test400.png')
 		
-		testData, testClasses, y2 = getMatTestData(dataFile)
+		testData, testClasses, y2 = getMatTestData(dataFile, ave, std, p, dim)
 		for i, j in zip(testData, y2):
 			# tmp = np.asarray(i, dtype='float')
 			solve = judge(i, testClasses, Wa, Sw)
