@@ -5,26 +5,6 @@ import itertools
 import matplotlib.pyplot as plt
 
 
-def pca(x, rate):
-	ave = np.mean(x, axis=0)
-	std = np.std(x, axis=0)
-	x1 = (x - ave)/std
-	# cov = np.cov(x1.T)
-	cov = x1.T.dot(x1) / 399
-	eig_val, eig_vec = np.linalg.eig(cov)
-	# eig_pairs = np.row_stack((np.abs(eig_val), eig_vec))
-	eigValInd = np.argsort(-eig_val)
-	for i in range(len(eig_val)):
-		topK = eigValInd[:i]
-		eigVal = eig_val[topK]
-		a = eigVal.sum()
-		b = eig_val.sum()
-		if a / b >= rate:
-			break
-	selectVal = eig_vec.T[:, topK]
-	return x.dot(selectVal), ave, std, selectVal, len(topK)
-
-
 def getData(dataFile):
 	file = open(dataFile, 'r')
 	try:
@@ -49,60 +29,49 @@ def getData(dataFile):
 def getW(data, classes, nl):
 	# 求权值矩阵Ww
 	Ww = {}
-	Wb = {}
 	tmpClasses = [i for i in classes.keys()]
 	for cl in tmpClasses:
 		tmpWw = []
-		tmpWb = []
 		nk = len(classes[cl])
 		for i in range(nl):
 			tmpWw.append([])
-			tmpWb.append([])
 			for j in range(nl):
 				if (data[i] in classes[cl]) and (data[j] in classes[cl]):
 					tmpWw[-1].append(1 / nk)
-					tmpWb[-1].append(1 / nl - 1 / nk)
 				else:
 					tmpWw[-1].append(0)
-					tmpWb[-1].append(1 / nl)
 		Ww[cl] = np.asarray(tmpWw)
-		Wb[cl] = np.asarray(tmpWb)
-	return Ww, Wb
+	return Ww
 
 
-def getS(data, Ww, Wb, nl):
+def getS(data, classes, Ww, nl):
 	x = np.asarray(data)
 	length = x[0].shape[0]
-	# Sb = np.zeros([length, length], dtype='float')
+	Sb = np.zeros([length, length], dtype='float')
 	Sw = {'sum': np.zeros([length, length], dtype='float')}
-	Sb = {'sum': np.zeros([length, length], dtype='float')}
-	# aveClass = {}
-	# aveAll = np.mean(data, axis=0)
+	aveClass = {}
+	aveAll = np.mean(data, axis=0)
 	for category in Ww.keys():
-		# aveClass[category] = np.mean(classes[category], axis=0)
+		aveClass[category] = np.mean(classes[category], axis=0)
 		Sw[category] = np.zeros([length, length], dtype='float')
-		Sb[category] = np.zeros([length, length], dtype='float')
 		for i in range(nl):
 			for j in range(nl):
 				tmp = (x[i] - x[j]).reshape(length, 1)
 				Sw[category] += Ww[category][i][j] * np.dot(tmp, tmp.T)
-				Sb[category] += Wb[category][i][j] * np.dot(tmp, tmp.T)
 		Sw[category] *= 0.5
-		Sb[category] *= 0.5
-		# Sb += np.asarray(classes[category], dtype='float').shape[0] * \
-		# 		np.dot((aveClass[category] - aveAll).reshape(length, 1),
-		# 				(aveClass[category] - aveAll).reshape(1, length))
+		Sb += np.asarray(classes[category], dtype='float').shape[0] * \
+				np.dot((aveClass[category] - aveAll).reshape(length, 1),
+						(aveClass[category] - aveAll).reshape(1, length))
 		Sw['sum'] += Sw[category]
-		Sb['sum'] += Sb[category]
 	return Sb, Sw
 
 
 def dimReduction(Sb, Sw, data):
-	length = len(data[0])
+	V = data.shape[1]
 	eigVals, eigVecs = np.linalg.eig(np.linalg.inv(Sw).dot(Sb))
 	eig_pairs = [(np.abs(eigVals[i]), eigVecs[:, i]) for i in range(len(eigVals))]
 	eig_pairs = sorted(eig_pairs, key=lambda k: k[0], reverse=True)
-	Wa = np.hstack((eig_pairs[0][1].reshape(length, 1), eig_pairs[1][1].reshape(length, 1)))
+	Wa = np.hstack((eig_pairs[0][1].reshape(V, 1), eig_pairs[1][1].reshape(V, 1)))
 	try:
 		dataLda = data.dot(Wa)
 	except AttributeError:
@@ -111,13 +80,14 @@ def dimReduction(Sb, Sw, data):
 
 
 def judge(vector, classes, Wa, Sw):
-	# numClasses = len(classes)
+	numClasses = len(classes)
+	V = vector.shape[0]
 	aveClass = {}
 	maxgj = -99999999
 	solve = "not found"
-	vector.reshape([1, 4])
+	vector.reshape([1, V])
 	for category in classes.keys():
-		aveClass[category] = np.mean(classes[category], axis=0).reshape([1, 4])
+		aveClass[category] = np.mean(classes[category], axis=0).reshape([1, V])
 		nj = len(classes[category])
 		gj = -0.5*(vector - aveClass[category]).dot(Wa)\
 			.dot(np.linalg.inv(1 / (nj - 1)*Wa.T.dot(Sw[category]).dot(Wa)))\
@@ -133,21 +103,22 @@ if __name__ == '__main__':
 	dataFile = 'iris.data'
 	testFile = 'iris.data.bak'
 	data, classes, nl = getData(dataFile)
-	Ww, Wb = getW(data, classes, nl)
-	Sb, Sw = getS(data, classes, Ww, Wb, nl)
+	Ww = getW(data, classes, nl)
+	Sb, Sw = getS(data, classes, Ww, nl)
 	np.set_printoptions(threshold=np.NaN)
 	fileWb = open('sb', mode='w')
 	fileWw = open('sw', mode='w')
-	Wa, dataLda = dimReduction(Sb['sum'], Sw['sum'], data)
-	print(dataLda)
+	Wa, dataLda = dimReduction(Sb, Sw['sum'], data)
 	test, a, b = getData(testFile)
 	for i in itertools.chain(range(10), range(50, 65), range(100, 120)):
 		vector = np.asarray(test[i], dtype='float')
 		print(i+1, ':', judge(vector, classes, Wa, Sw)[:-1])
+	"""
 	plt.plot(dataLda[0:50][:, 0], dataLda[0:50][:, 1], 'r--',
 				dataLda[50:100][:, 0], dataLda[50:100][:, 1], 'bs',
 				dataLda[100:150][:, 0], dataLda[100:150][:, 1], 'g^')
 	plt.show()
+	"""
 	try:
 		fileWb.write(str(Sb))
 		fileWw.write(str(Sw['sum']))

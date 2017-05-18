@@ -2,4 +2,6 @@
 
 !*.py
 test.py
+!.gitignore
+!*.md
 
