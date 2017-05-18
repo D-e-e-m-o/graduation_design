@@ -1,5 +1,6 @@
 *
 
+!*.md
 !*.py
 test.py
 

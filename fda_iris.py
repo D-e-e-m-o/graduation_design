@@ -67,11 +67,11 @@ def getS(data, classes, Ww, nl):
 
 
 def dimReduction(Sb, Sw, data):
-	length = len(data[0])
+	V = data.shape[1]
 	eigVals, eigVecs = np.linalg.eig(np.linalg.inv(Sw).dot(Sb))
 	eig_pairs = [(np.abs(eigVals[i]), eigVecs[:, i]) for i in range(len(eigVals))]
 	eig_pairs = sorted(eig_pairs, key=lambda k: k[0], reverse=True)
-	Wa = np.hstack((eig_pairs[0][1].reshape(length, 1), eig_pairs[1][1].reshape(length, 1)))
+	Wa = np.hstack((eig_pairs[0][1].reshape(V, 1), eig_pairs[1][1].reshape(V, 1)))
 	try:
 		dataLda = data.dot(Wa)
 	except AttributeError:
@@ -80,13 +80,14 @@ def dimReduction(Sb, Sw, data):
 
 
 def judge(vector, classes, Wa, Sw):
-	# numClasses = len(classes)
+	numClasses = len(classes)
+	V = vector.shape[0]
 	aveClass = {}
 	maxgj = -99999999
 	solve = "not found"
-	vector.reshape([1, 4])
+	vector.reshape([1, V])
 	for category in classes.keys():
-		aveClass[category] = np.mean(classes[category], axis=0).reshape([1, 4])
+		aveClass[category] = np.mean(classes[category], axis=0).reshape([1, V])
 		nj = len(classes[category])
 		gj = -0.5*(vector - aveClass[category]).dot(Wa)\
 			.dot(np.linalg.inv(1 / (nj - 1)*Wa.T.dot(Sw[category]).dot(Wa)))\
